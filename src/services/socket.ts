@@ -25,16 +25,40 @@ class SocketService {
         io.on('connection', async (socket) => {
             console.log('New connection:', socket.id);
 
-            const playerId = socket.handshake.query.playerId as string;
+            const userType = socket.handshake.query.userType as string;
 
-            const player = await this.prisma.player.findUnique({
-                where: {
-                    id: playerId
+            if(userType === 'player') {
+                
+                const playerId = socket.handshake.query.playerId as string;
+
+                const player = await this.prisma.player.findUnique({
+                    where: {
+                        id: playerId
+                    }
+                });
+
+                if (!player) {
+                    console.log('Player', playerId,'not found... \nDisconnecting Socket:', socket.id);
+                    socket.disconnect();
+                    return;
                 }
-            });
 
-            if (!player) {
-                console.log('Player', playerId,'not found... \nDisconnecting Socket:', socket.id);
+            }else if(userType === 'admin') {
+                    const adminId = socket.handshake.query.adminId as string;
+    
+                    const admin = await this.prisma.user.findUnique({
+                        where: {
+                            id: adminId
+                        }
+                    });
+
+                    if (!admin) {
+                        console.log('Admin', adminId,'not found... \nDisconnecting Socket:', socket.id);
+                        socket.disconnect();
+                        return;
+                    }
+            }else{
+                console.log('Invalid userType:', userType, '\nDisconnecting Socket:', socket.id);
                 socket.disconnect();
                 return;
             }
