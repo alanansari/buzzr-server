@@ -45,7 +45,7 @@ class SocketService {
 
             }else if(userType === 'admin') {
                     const adminEmail = socket.handshake.query.adminEmail as string;
-    
+                    
                     const admin = await this.prisma.user.findUnique({
                         where: {
                             email: adminEmail
