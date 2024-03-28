@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,14 +16,15 @@ model Account {
   type              String
   provider          String
   providerAccountId String  @map("provider_account_id")
-  refresh_token     String?
-  access_token      String?
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String?
+  id_token          String? @db.Text
   session_state     String?
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -42,10 +46,10 @@ model User {
   email         String?       @unique
   emailVerified DateTime?     @map("email_verified")
   image         String?
-  GameSessions  GameSession[]
-  quizzes       Quiz[]
   accounts      Account[]
   sessions      Session[]
+  quizzes       Quiz[]
+  GameSessions  GameSession[]
 
   @@map("users")
 }
@@ -63,48 +67,49 @@ model Quiz {
   id           String        @id @default(cuid())
   title        String
   description  String?
-  userId       String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
   thumbnail    String?
-  gameSessions GameSession[]
   questions    Question[]
   user         User          @relation(fields: [userId], references: [id])
+  userId       String
+  gameSessions GameSession[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
 model Question {
   id        String   @id @default(cuid())
   title     String
-  quizId    String
-  createdAt DateTime @default(now())
   options   Option[]
   quiz      Quiz     @relation(fields: [quizId], references: [id])
+  quizId    String
+  createdAt DateTime @default(now())
 }
 
 model Option {
   id         String   @id @default(cuid())
   title      String
   isCorrect  Boolean
+  question   Question @relation(fields: [questionId], references: [id])
   questionId String
   createdAt  DateTime @default(now())
-  question   Question @relation(fields: [questionId], references: [id])
 }
 
 model Player {
-  id         String       @id @default(cuid())
+  id         String      @id @default(cuid())
   name       String
-  gameId     String?
-  createdAt  DateTime     @default(now())
   profilePic String?
   game       GameSession? @relation(fields: [gameId], references: [id])
+  gameId     String?
+  createdAt  DateTime    @default(now())
 }
 
 model GameSession {
   id             String   @id @default(cuid())
+  gameCode       String   @unique
+  quiz           Quiz     @relation(fields: [quizId], references: [id])
   cuurentQuetion Int      @default(0)
   quizId         String
-  creatorId      String
-  creator        User     @relation(fields: [creatorId], references: [id])
-  quiz           Quiz     @relation(fields: [quizId], references: [id])
   players        Player[]
+  creator        User     @relation(fields: [creatorId], references: [id])
+  creatorId      String
 }

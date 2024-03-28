@@ -44,16 +44,16 @@ class SocketService {
                 }
 
             }else if(userType === 'admin') {
-                    const adminId = socket.handshake.query.adminId as string;
+                    const adminEmail = socket.handshake.query.adminEmail as string;
     
                     const admin = await this.prisma.user.findUnique({
                         where: {
-                            id: adminId
+                            email: adminEmail
                         }
                     });
 
                     if (!admin) {
-                        console.log('Admin', adminId,'not found... \nDisconnecting Socket:', socket.id);
+                        console.log('Admin: ', adminEmail,'not found... \nDisconnecting Socket:', socket.id);
                         socket.disconnect();
                         return;
                     }
