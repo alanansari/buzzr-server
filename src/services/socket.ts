@@ -23,11 +23,12 @@ class SocketService {
 
     io.on("connection", async (socket) => {
       console.log("New connection:", socket.id);
-
+      
       const userType = socket.handshake.query.userType as string;
-
+      const playerId = socket.handshake.query.playerId as string;
+      const adminId = socket.handshake.query.adminId as string;
+      
       if (userType === "player") {
-        const playerId = socket.handshake.query.playerId as string;
 
         const player = await this.prisma.player.findUnique({
           where: {
@@ -46,7 +47,6 @@ class SocketService {
           return;
         }
       } else if (userType === "admin") {
-        const adminId = socket.handshake.query.adminId as string;
         const admin = await this.prisma.user.findUnique({
           where: {
             id: adminId,
@@ -73,36 +73,23 @@ class SocketService {
         socket.disconnect();
         return;
       }
+        const gameCode = socket.handshake.query.gameCode as string;
 
-      // handle room join
-      socket.on("join room", async (roomId: string) => {
-
-        console.log("abcd")
-        
-        //   check game exists or not
         const game = await this.prisma.gameSession.findUnique({
-          where: {
-            gameCode: roomId,
-          },
+            where: {
+            gameCode,
+            },
         });
 
         if (!game) {
-          console.log("Game: ", roomId, "not found");
-          socket.disconnect();
-          return;
+            console.log("Game: ", gameCode, "not found... \nDisconnecting Socket:", socket.id);
+            socket.disconnect();
+            return;
         }
 
-        // join room if game exists
-        socket.join(roomId);
-
-        console.log(`User ${socket.id} joined ${roomId}`);
-
-        io.to(roomId).emit("user joined", socket.id);
-      });
-
-      socket.on("event:message", async ({ message }: { message: string }) => {
-        console.log("New message: ", message);
-      });
+        socket.join(gameCode);
+        
+        console.log((userType==='player')?`Player: ${playerId}`:`Admin: ${adminId}`, "with SocketId:", socket.id, "joined Game:", gameCode);
     });
   }
 
