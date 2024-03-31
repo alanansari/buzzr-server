@@ -27,10 +27,12 @@ class SocketService {
       const userType = socket.handshake.query.userType as string;
       const playerId = socket.handshake.query.playerId as string;
       const adminId = socket.handshake.query.adminId as string;
+
+      let player;
       
       if (userType === "player") {
 
-        const player = await this.prisma.player.findUnique({
+        player = await this.prisma.player.findUnique({
           where: {
             id: playerId,
           },
@@ -88,8 +90,12 @@ class SocketService {
         }
 
         socket.join(gameCode);
-        
+
         console.log((userType==='player')?`Player: ${playerId}`:`Admin: ${adminId}`, "with SocketId:", socket.id, "joined Game:", gameCode);
+
+        if(userType === 'player'){
+            io.to(gameCode).emit('player-joined', player);
+        }
     });
   }
 
