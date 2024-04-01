@@ -23,15 +23,14 @@ class SocketService {
 
     io.on("connection", async (socket) => {
       console.log("New connection:", socket.id);
-      
+
       const userType = socket.handshake.query.userType as string;
       const playerId = socket.handshake.query.playerId as string;
       const adminId = socket.handshake.query.adminId as string;
 
       let player;
-      
-      if (userType === "player") {
 
+      if (userType === "player") {
         player = await this.prisma.player.findUnique({
           where: {
             id: playerId,
@@ -75,27 +74,72 @@ class SocketService {
         socket.disconnect();
         return;
       }
-        const gameCode = socket.handshake.query.gameCode as string;
+      const gameCode = socket.handshake.query.gameCode as string;
 
-        const game = await this.prisma.gameSession.findUnique({
-            where: {
+      const game = await this.prisma.gameSession.findUnique({
+        where: {
+          gameCode,
+        },
+      });
+
+      if (!game) {
+        console.log(
+          "Game: ",
+          gameCode,
+          "not found... \nDisconnecting Socket:",
+          socket.id
+        );
+        socket.disconnect();
+        return;
+      }
+
+      socket.join(gameCode);
+
+      console.log(
+        userType === "player" ? `Player: ${playerId}` : `Admin: ${adminId}`,
+        "with SocketId:",
+        socket.id,
+        "joined Game:",
+        gameCode
+      );
+
+      if (userType === "player") {
+        io.to(gameCode).emit("player-joined", player);
+      }
+
+      // remove player
+      socket.on("remove-player", async (playerId, gameCode) => {
+        const gameSession = await this.prisma.gameSession.findUnique({
+          where: {
             gameCode,
-            },
+          },
+          include: {
+            players: true, // Include players in the result
+          },
         });
 
-        if (!game) {
-            console.log("Game: ", gameCode, "not found... \nDisconnecting Socket:", socket.id);
-            socket.disconnect();
-            return;
+        if (!gameSession) {
+          console.log("Game: ", gameCode, "not found... \n");
+          return;
         }
 
-        socket.join(gameCode);
+        const updatedPlayers = gameSession.players.filter(
+          (player) => player.id !== playerId
+        );
 
-        console.log((userType==='player')?`Player: ${playerId}`:`Admin: ${adminId}`, "with SocketId:", socket.id, "joined Game:", gameCode);
+        await this.prisma.gameSession.update({
+          where: {
+            gameCode,
+          },
+          data: {
+            players: {
+              set: updatedPlayers,
+            },
+          },
+        });
 
-        if(userType === 'player'){
-            io.to(gameCode).emit('player-joined', player);
-        }
+        io.to(gameCode).emit("player-removed", playerId);
+      });
     });
   }
 
