@@ -108,37 +108,46 @@ class SocketService {
       }
 
       // remove player
-      socket.on("remove-player", async (playerId, gameCode) => {
-        const gameSession = await this.prisma.gameSession.findUnique({
-          where: {
-            gameCode,
-          },
-          include: {
-            players: true, // Include players in the result
-          },
-        });
-
-        if (!gameSession) {
-          console.log("Game: ", gameCode, "not found... \n");
-          return;
-        }
-
-        const updatedPlayers = gameSession.players.filter(
-          (player) => player.id !== playerId
-        );
-
-        await this.prisma.gameSession.update({
-          where: {
-            gameCode,
-          },
+      socket.on("remove-player", async (player, gameCode) => {
+        await this.prisma.player.update({
+          where: { id: player.id },
           data: {
-            players: {
-              set: updatedPlayers,
-            },
+            gameId: null,
           },
         });
 
-        io.to(gameCode).emit("player-removed", playerId);
+        console.log("Player", player.id, "removed from", gameCode);
+
+        io.to(gameCode).emit("player-removed", player);
+      });
+
+      // start game
+      socket.on("start-game", async (gameCode) => {
+        await this.prisma.gameSession.update({
+          where: { gameCode },
+          data: {
+            isPlaying: true,
+          },
+        });
+
+        console.log("Game", gameCode, "started");
+
+        io.to(gameCode).emit("game-started", gameCode);
+      });
+
+      // update question
+      socket.on("set-question-index", async (gameCode, index) => {
+        await this.prisma.gameSession.update({
+          where: { gameCode },
+          data: {
+            isPlaying: true,
+            currentQuestion: index,
+          },
+        });
+
+        console.log("Current question index is", index, " of Game", gameCode);
+
+        io.to(gameCode).emit("get-question-index", gameCode, index);
       });
     });
   }
