@@ -135,6 +135,12 @@ class SocketService {
         io.to(gameCode).emit("game-started", gameCode);
       });
 
+      // set timer
+      socket.on("start-timer", () => {
+        console.log("start timer");
+        io.to(gameCode).emit("timer-starts");
+      });
+
       // update question
       socket.on("set-question-index", async (gameCode, index) => {
         await this.prisma.gameSession.update({
@@ -148,6 +154,12 @@ class SocketService {
         console.log("Current question index is", index, " of Game", gameCode);
 
         io.to(gameCode).emit("get-question-index", gameCode, index);
+      });
+
+      // show result
+      socket.on("display-result", () => {
+        console.log("Result displaying");
+        io.to(gameCode).emit("displaying-result");
       });
     });
   }
