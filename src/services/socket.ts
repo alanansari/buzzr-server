@@ -135,7 +135,7 @@ class SocketService {
         io.to(gameCode).emit("game-started", gameCode);
       });
 
-      // start timer
+      // set timer
       socket.on("start-timer", () => {
         console.log("start timer");
         io.to(gameCode).emit("timer-starts");
