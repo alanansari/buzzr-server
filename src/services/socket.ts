@@ -132,7 +132,7 @@ class SocketService {
 
         console.log("Game", gameCode, "started");
 
-        io.to(gameCode).emit("game-started", gameCode);
+        io.to(gameCode).emit("game-started");
       });
 
       // set timer
@@ -153,7 +153,78 @@ class SocketService {
 
         console.log("Current question index is", index, " of Game", gameCode);
 
-        io.to(gameCode).emit("get-question-index", gameCode, index);
+        io.to(gameCode).emit("get-question-index", index);
+      });
+
+      // Accept Answer from Player
+      socket.on("submit-answer", async (gameSessionId: string, playerId: string, optionId: string, timeTaken: number) => {
+
+        console.log("Player", playerId, "selected option", optionId, "in Game", gameSessionId);
+
+        const option = await this.prisma.option.findUnique({
+          where: {
+            id: optionId,
+          },
+          include: {
+            question: true,
+          },
+        });
+
+        let score = option?.isCorrect ? 1000 : 0;
+
+        // reduce score based on time taken and question time limit if correct answer
+        if (option?.isCorrect) {
+          const question = option.question;
+          const timeLimit = question?.timeOut as number;
+
+          if (timeTaken < timeLimit) {
+            score -= (timeTaken/timeLimit) * 900;
+          }else{
+            score = 100;
+          }
+        }
+
+        // Store the answer in the database
+        const prevAns = await this.prisma.playerAnswer.findUnique({
+          where:{
+            playerId_questionId_gameSessionId:{
+              playerId: playerId,
+              questionId: option?.questionId as string,
+              gameSessionId: gameSessionId
+            }
+          }
+        });
+
+        if(!prevAns){
+          await this.prisma.playerAnswer.create({
+            data: {
+              playerId: playerId,
+              questionId: option?.questionId as string,
+              gameSessionId: gameSessionId,
+              optionId: optionId,
+              timeTaken: timeTaken,
+              isCorrect: option?.isCorrect as boolean,
+              score: score,
+            },
+          });
+        }else{
+          await this.prisma.playerAnswer.update({
+            where:{
+              playerId_questionId_gameSessionId:{
+                playerId: playerId,
+                questionId: option?.questionId as string,
+                gameSessionId: gameSessionId
+              }
+            },
+            data:{
+              optionId: optionId,
+              timeTaken: timeTaken,
+              isCorrect: option?.isCorrect as boolean,
+              score: score,
+            }
+          });
+        }
+
       });
 
       // show result
