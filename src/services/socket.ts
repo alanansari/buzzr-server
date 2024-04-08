@@ -146,7 +146,6 @@ class SocketService {
         await this.prisma.gameSession.update({
           where: { gameCode },
           data: {
-            isPlaying: true,
             currentQuestion: index,
           },
         });
@@ -157,9 +156,43 @@ class SocketService {
       });
 
       // show result
-      socket.on("display-result", () => {
-        console.log("Result displaying");
-        io.to(gameCode).emit("displaying-result");
+      socket.on("display-result", async (gameCode, quesId, options) => {
+        const room = await this.prisma.gameSession.findUnique({
+          where: {
+            gameCode: gameCode,
+          },
+        });
+
+        const playerCount = [];
+        for (const opt of options) {
+          const count = await this.prisma.playerAnswer.count({
+            where: {
+              questionId: quesId,
+              optionId: opt.id,
+              gameSessionId: room?.id,
+            },
+          });
+          playerCount.push(count);
+        }
+
+        console.log("Result displaying with player counts", JSON.stringify(playerCount));
+        io.to(gameCode).emit("displaying-result", playerCount);
+      });
+
+      // display leaderboard
+
+      // next question
+      socket.on("change-question", async (gameCode, index) => {
+        await this.prisma.gameSession.update({
+          where: { gameCode },
+          data: {
+            currentQuestion: index,
+          },
+        });
+
+        console.log("Next question index is", index, " of Game", gameCode);
+
+        io.to(gameCode).emit("question-changed");
       });
     });
   }
