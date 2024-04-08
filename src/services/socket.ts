@@ -225,6 +225,41 @@ class SocketService {
           });
         }
 
+        const prevScore = (prevAns) ? prevAns.score : 0;
+        const newScore = score - prevScore;
+
+        // Update player score in leaderboard
+        const leaderboard = await this.prisma.gameLeaderboard.findUnique({
+          where: {
+            playerId_gameSessionId: {
+              playerId: playerId,
+              gameSessionId: gameSessionId,
+            },
+          },
+        });
+
+        if (leaderboard) {
+          await this.prisma.gameLeaderboard.update({
+            where: {
+              playerId_gameSessionId: {
+                playerId: playerId,
+                gameSessionId: gameSessionId,
+              },
+            },
+            data: {
+              score: leaderboard.score + newScore,
+            },
+          });
+        } else {
+          await this.prisma.gameLeaderboard.create({
+            data: {
+              playerId: playerId,
+              gameSessionId: gameSessionId,
+              score: newScore,
+            },
+          });
+        }
+
       });
 
       // show result

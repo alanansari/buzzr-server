@@ -120,13 +120,13 @@ model GameSession {
 }
 
 model GameLeaderboard {
-  id            String      @id
+  id            String      @id @default(cuid())
   playerId      String
   gameSessionId String
   score         Int         @default(0)
   GameSession   GameSession @relation(fields: [gameSessionId], references: [id])
   Player        Player      @relation(fields: [playerId], references: [id])
-  
+
   @@unique([playerId, gameSessionId])
 }
 
