@@ -309,13 +309,10 @@ class SocketService {
 
         const data = {
           presenter: playerCount,
-          player:playerAnswers
-        }
+          player: playerAnswers,
+        };
 
-        console.log(
-          "Result displaying with data",
-          JSON.stringify(data)
-        );
+        console.log("Result displaying with data", JSON.stringify(data));
         io.to(gameCode).emit("displaying-result", data);
       });
 
@@ -339,20 +336,6 @@ class SocketService {
         });
 
         io.to(gameCode).emit("displaying-leaderboard", leaderboard);
-      });
-
-      // next question
-      socket.on("change-question", async (gameCode, index) => {
-        await this.prisma.gameSession.update({
-          where: { gameCode },
-          data: {
-            currentQuestion: index,
-          },
-        });
-
-        console.log("Next question index is", index, " of Game", gameCode);
-
-        io.to(gameCode).emit("question-changed");
       });
     });
   }
