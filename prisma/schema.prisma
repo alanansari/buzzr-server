@@ -112,7 +112,7 @@ model GameSession {
   gameState       GameStates       @default(question)
   isPlaying       Boolean          @default(false)
   currentQuestion Int              @default(0)
-  GameLeaderboard GameLeaderboard?
+  GameLeaderboard GameLeaderboard[]
   creator         User             @relation(fields: [creatorId], references: [id])
   quiz            Quiz             @relation(fields: [quizId], references: [id])
   players         Player[]
@@ -120,16 +120,18 @@ model GameSession {
 }
 
 model GameLeaderboard {
-  id            String      @id
+  id            String      @id @default(cuid())
   playerId      String
-  gameSessionId String      @unique
+  gameSessionId String
   score         Int         @default(0)
   GameSession   GameSession @relation(fields: [gameSessionId], references: [id])
   Player        Player      @relation(fields: [playerId], references: [id])
+
+  @@unique([playerId, gameSessionId])
 }
 
 model PlayerAnswer {
-  id            String      @id
+  id            String      @id @default(cuid())
   playerId      String
   questionId    String
   optionId      String
