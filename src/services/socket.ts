@@ -335,7 +335,39 @@ class SocketService {
           },
         });
 
+        console.log("PResent leaderboard", leaderboard);
+
         io.to(gameCode).emit("displaying-leaderboard", leaderboard);
+      });
+
+      socket.on("final-leaderboard", async (gameCode) => {
+        const room = await this.prisma.gameSession.findUnique({
+          where: {
+            gameCode: gameCode,
+          },
+        });
+        const leaderboard = await this.prisma.gameLeaderboard.findMany({
+          where: {
+            gameSessionId: room?.id,
+          },
+          include: {
+            Player: true,
+          },
+          orderBy: {
+            score: "desc",
+          },
+        });
+
+        const newleaderboard = leaderboard.map((entry, index) => ({
+          ...entry,
+          position: index + 1,
+        }));
+
+        io.to(gameCode).emit("displaying-final-leaderboard", newleaderboard);
+      });
+
+      socket.on("end-game-session", () => {
+        io.to(gameCode).emit("game-session-ended");
       });
     });
   }
