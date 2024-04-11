@@ -109,16 +109,20 @@ class SocketService {
 
       // remove player
       socket.on("remove-player", async (player, gameCode) => {
-        await this.prisma.player.update({
-          where: { id: player.id },
-          data: {
-            gameId: null,
-          },
-        });
-
-        console.log("Player", player.id, "removed from", gameCode);
-
-        io.to(gameCode).emit("player-removed", player);
+        try {
+          await this.prisma.player.update({
+            where: { id: player.id },
+            data: {
+              gameId: null,
+            },
+          });
+  
+          console.log("Player", player.id, "removed from", gameCode);
+  
+          io.to(gameCode).emit("player-removed", player);
+        } catch (error) {
+          console.error("Error removing player:", error);
+        }
       });
 
       // start game

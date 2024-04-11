@@ -78,6 +78,8 @@ model Question {
   quizId       String
   createdAt    DateTime       @default(now())
   timeOut      Int            @default(15)
+  media        String?
+  mediaType    String?
   options      Option[]
   PlayerAnswer PlayerAnswer[]
   quiz         Quiz           @relation(fields: [quizId], references: [id])
@@ -105,16 +107,16 @@ model Player {
 }
 
 model GameSession {
-  id              String           @id @default(cuid())
+  id              String            @id @default(cuid())
   quizId          String
   creatorId       String
-  gameCode        String           @unique
-  gameState       GameStates       @default(question)
-  isPlaying       Boolean          @default(false)
-  currentQuestion Int              @default(0)
+  gameCode        String            @unique
+  gameState       GameStates        @default(question)
+  isPlaying       Boolean           @default(false)
+  currentQuestion Int               @default(0)
   GameLeaderboard GameLeaderboard[]
-  creator         User             @relation(fields: [creatorId], references: [id])
-  quiz            Quiz             @relation(fields: [quizId], references: [id])
+  creator         User              @relation(fields: [creatorId], references: [id])
+  quiz            Quiz              @relation(fields: [quizId], references: [id])
   players         Player[]
   PlayerAnswer    PlayerAnswer[]
 }
