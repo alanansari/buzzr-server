@@ -1,7 +1,7 @@
 import http from 'http';
 import SocketService from './services/socket';
 import dotenv from 'dotenv';
-import express from 'express';
+import express from 'express'
 import cors from 'cors';
 
 dotenv.config();

@@ -163,6 +163,25 @@ class SocketService {
         }
       });
 
+      // change question from leaderboard (presenter side)
+      socket.on("change-question", async (gameCode, index) => {
+        try{
+          await this.prisma.gameSession.update({
+            where: { gameCode },
+            data: {
+              currentQuestion: index,
+            },
+          });
+
+          console.log("Current question index is", index, " of Game", gameCode);
+
+          io.to(gameCode).emit("question-changed", index);
+        } catch (error) {
+          console.error("Error setting question index:", error);
+        }
+      });
+
+
       // Accept Answer from Player
       socket.on(
         "submit-answer",
