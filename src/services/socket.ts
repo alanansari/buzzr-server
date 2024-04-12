@@ -140,23 +140,27 @@ class SocketService {
       });
 
       // set timer
-      socket.on("start-timer", () => {
+      socket.on("start-timer", async (gameCode) => {
         console.log("start timer");
         io.to(gameCode).emit("timer-starts");
       });
 
       // update question
       socket.on("set-question-index", async (gameCode, index) => {
-        await this.prisma.gameSession.update({
-          where: { gameCode },
-          data: {
-            currentQuestion: index,
-          },
-        });
+        try{
+          await this.prisma.gameSession.update({
+            where: { gameCode },
+            data: {
+              currentQuestion: index,
+            },
+          });
 
-        console.log("Current question index is", index, " of Game", gameCode);
+          console.log("Current question index is", index, " of Game", gameCode);
 
-        io.to(gameCode).emit("get-question-index", index);
+          io.to(gameCode).emit("get-question-index", index);
+        } catch (error) {
+          console.error("Error setting question index:", error);
+        }
       });
 
       // Accept Answer from Player
@@ -168,6 +172,7 @@ class SocketService {
           optionId: string,
           timeTaken: number
         ) => {
+          try{
           console.log(
             "Player",
             playerId,
@@ -275,102 +280,116 @@ class SocketService {
               },
             });
           }
+        }catch (error) {
+          console.error("Error submitting answer:", error);
         }
-      );
+      });
 
       // show result
       socket.on("display-result", async (gameCode, quesId, options) => {
-        const room = await this.prisma.gameSession.findUnique({
-          where: {
-            gameCode: gameCode,
-          },
-        });
-
-        // return player counts for presenter
-        const playerCount = [];
-        for (const opt of options) {
-          const count = await this.prisma.playerAnswer.count({
+        try {
+          const room = await this.prisma.gameSession.findUnique({
             where: {
-              questionId: quesId,
-              optionId: opt.id,
-              gameSessionId: room?.id,
+              gameCode: gameCode,
             },
           });
-          playerCount.push(count);
+
+          // return player counts for presenter
+          const playerCount = [];
+          for (const opt of options) {
+            const count = await this.prisma.playerAnswer.count({
+              where: {
+                questionId: quesId,
+                optionId: opt.id,
+                gameSessionId: room?.id,
+              },
+            });
+            playerCount.push(count);
+          }
+
+          // return answer array for player
+          const playerAnswers = await this.prisma.playerAnswer.findMany({
+            where: {
+              gameSessionId: room?.id,
+              questionId: quesId,
+            },
+            select: {
+              isCorrect: true,
+              playerId: true,
+            },
+          });
+
+          const data = {
+            presenter: playerCount,
+            player: playerAnswers,
+          };
+
+          console.log("Result displaying with data", JSON.stringify(data));
+          io.to(gameCode).emit("displaying-result", data);
+        } catch (error) {
+          console.error("Error displaying result:", error);
         }
-
-        // return answer array for player
-        const playerAnswers = await this.prisma.playerAnswer.findMany({
-          where: {
-            gameSessionId: room?.id,
-            questionId: quesId,
-          },
-          select: {
-            isCorrect: true,
-            playerId: true,
-          },
-        });
-
-        const data = {
-          presenter: playerCount,
-          player: playerAnswers,
-        };
-
-        console.log("Result displaying with data", JSON.stringify(data));
-        io.to(gameCode).emit("displaying-result", data);
       });
 
       // display leaderboard
       socket.on("display-leaderboard", async (gameCode) => {
-        const room = await this.prisma.gameSession.findUnique({
-          where: {
-            gameCode: gameCode,
-          },
-        });
-        const leaderboard = await this.prisma.gameLeaderboard.findMany({
-          where: {
-            gameSessionId: room?.id,
-          },
-          include: {
-            Player: true,
-          },
-          orderBy: {
-            score: "desc",
-          },
-        });
+        try {
+          const room = await this.prisma.gameSession.findUnique({
+            where: {
+              gameCode: gameCode,
+            },
+          });
+          const leaderboard = await this.prisma.gameLeaderboard.findMany({
+            where: {
+              gameSessionId: room?.id,
+            },
+            include: {
+              Player: true,
+            },
+            orderBy: {
+              score: "desc",
+            },
+          });
 
-        console.log("PResent leaderboard", leaderboard);
+          console.log("PResent leaderboard", leaderboard);
 
-        io.to(gameCode).emit("displaying-leaderboard", leaderboard);
+          io.to(gameCode).emit("displaying-leaderboard", leaderboard);
+        } catch (error) {
+          console.error("Error displaying leaderboard:", error);
+        }
       });
 
       socket.on("final-leaderboard", async (gameCode) => {
-        const room = await this.prisma.gameSession.findUnique({
-          where: {
-            gameCode: gameCode,
-          },
-        });
-        const leaderboard = await this.prisma.gameLeaderboard.findMany({
-          where: {
-            gameSessionId: room?.id,
-          },
-          include: {
-            Player: true,
-          },
-          orderBy: {
-            score: "desc",
-          },
-        });
+        try {
+          const room = await this.prisma.gameSession.findUnique({
+            where: {
+              gameCode: gameCode,
+            },
+          });
+          const leaderboard = await this.prisma.gameLeaderboard.findMany({
+            where: {
+              gameSessionId: room?.id,
+            },
+            include: {
+              Player: true,
+            },
+            orderBy: {
+              score: "desc",
+            },
+          });
 
-        const newleaderboard = leaderboard.map((entry, index) => ({
-          ...entry,
-          position: index + 1,
-        }));
+          const newleaderboard = leaderboard.map((entry, index) => ({
+            ...entry,
+            position: index + 1,
+          }));
 
-        io.to(gameCode).emit("displaying-final-leaderboard", newleaderboard);
+          io.to(gameCode).emit("displaying-final-leaderboard", newleaderboard);
+      } catch (error) {
+        console.error("Error displaying final leaderboard:", error);
+      }
       });
 
-      socket.on("end-game-session", () => {
+      socket.on("end-game-session", async (gameCode) => {
         io.to(gameCode).emit("game-session-ended");
       });
     });
