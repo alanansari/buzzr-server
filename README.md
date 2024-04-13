@@ -28,17 +28,13 @@ Welcome to Buzzr, where learning meets excitement! Join live quiz battles, creat
 
 ## Key Features ✨
 
-- **User Authentication:** Secure Google OAuth Sign In system using Next-Auth.
+- Secure Google OAuth Sign In system using Next-Auth.
 
-- **Buzzr Creation:** Create new buzzrs(quizzes) and add questions to it.
+- PostgreSQL for the DB because of its open source nature and several useful features.
 
-- **Host a Buzzr:** Host a new Game Session for the quiz.
+- Realtime player and presenter interations using web-sockets (socket-io).
 
-- **Real-time Updates:** Get Realtime player and presenter interations.
-
-- **Player Management:** Manage players in a game through presenter, system to kick unwanted players.
-
-- **Leaderboard:** See the leaderboard after each question round.
+- PostgreSQL database implementation using Prisma ORM for its features like relations, eager and lazy loading, read replication and more.
 
 ---
 
