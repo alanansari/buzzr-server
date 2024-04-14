@@ -116,9 +116,9 @@ class SocketService {
               gameId: null,
             },
           });
-  
+
           console.log("Player", player.id, "removed from", gameCode);
-  
+
           io.to(gameCode).emit("player-removed", player);
         } catch (error) {
           console.error("Error removing player:", error);
@@ -147,7 +147,7 @@ class SocketService {
 
       // update question
       socket.on("set-question-index", async (gameCode, index) => {
-        try{
+        try {
           await this.prisma.gameSession.update({
             where: { gameCode },
             data: {
@@ -165,7 +165,7 @@ class SocketService {
 
       // change question from leaderboard (presenter side)
       socket.on("change-question", async (gameCode, index) => {
-        try{
+        try {
           await this.prisma.gameSession.update({
             where: { gameCode },
             data: {
@@ -229,30 +229,8 @@ class SocketService {
 
       // display leaderboard
       socket.on("display-leaderboard", async (gameCode) => {
-        try {
-          const room = await this.prisma.gameSession.findUnique({
-            where: {
-              gameCode: gameCode,
-            },
-          });
-          const leaderboard = await this.prisma.gameLeaderboard.findMany({
-            where: {
-              gameSessionId: room?.id,
-            },
-            include: {
-              Player: true,
-            },
-            orderBy: {
-              score: "desc",
-            },
-          });
-
-          console.log("PResent leaderboard", leaderboard);
-
-          io.to(gameCode).emit("displaying-leaderboard", leaderboard);
-        } catch (error) {
-          console.error("Error displaying leaderboard:", error);
-        }
+        console.log("Present leaderboard");
+        io.to(gameCode).emit("displaying-leaderboard");
       });
 
       socket.on("final-leaderboard", async (gameCode) => {
@@ -280,9 +258,9 @@ class SocketService {
           }));
 
           io.to(gameCode).emit("displaying-final-leaderboard", newleaderboard);
-      } catch (error) {
-        console.error("Error displaying final leaderboard:", error);
-      }
+        } catch (error) {
+          console.error("Error displaying final leaderboard:", error);
+        }
       });
 
       socket.on("end-game-session", async (gameCode) => {
