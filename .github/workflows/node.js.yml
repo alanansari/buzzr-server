@@ -22,11 +22,11 @@
                         node-version: ${{ matrix.node-version }}
                         cache: 'npm'
                 -   run: npm ci
-                -   run: prisma generate
                 -   run: |
                         touch .env
-                        echo ${{ secrets.PROD_ENV_SECRETS }} > .env
+                        echo '${{ secrets.PROD_ENV_SECRETS }}' > .env
+                -   run: prisma generate
                 -   run: npm run build
-                
+                -   run: pm2 restart all
 
         
