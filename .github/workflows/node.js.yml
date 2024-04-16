@@ -1,0 +1,32 @@
+
+    name: Node.js CI
+
+    on:
+        push:
+            branches: ["main"]
+        pull_request:
+            branches: ["main"]
+    
+    jobs:
+        build:
+            runs-on: self-hosted
+            strategy:
+                matrix:
+                    node-version: [18.x]
+
+            steps:
+                -   uses: actions/checkout@v3
+                -   name: Use Node.js ${{ matrix.node-version }}
+                    uses: actions/setup-node@v3
+                    with:
+                        node-version: ${{ matrix.node-version }}
+                        cache: 'npm'
+                -   run: npm ci
+                -   run: prisma generate
+                -   run: |
+                        touch .env
+                        echo ${{ secrets.PROD_ENV_SECRETS }} > .env
+                -   run: npm run build
+                
+
+        
