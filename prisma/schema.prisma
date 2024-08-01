@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Account {
@@ -80,6 +81,7 @@ model Question {
   timeOut      Int            @default(15)
   media        String?
   mediaType    String?
+  order        Int            @default(1)
   options      Option[]
   PlayerAnswer PlayerAnswer[]
   quiz         Quiz           @relation(fields: [quizId], references: [id], onDelete: Cascade)
