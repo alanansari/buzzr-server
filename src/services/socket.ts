@@ -30,6 +30,8 @@ class SocketService {
 
       let player;
 
+      // check if player or admin exists
+
       if (userType === "player") {
         player = await this.prisma.player.findUnique({
           where: {
