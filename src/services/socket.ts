@@ -1,5 +1,6 @@
 import { Server } from "socket.io";
 import { PrismaClient } from "@prisma/client";
+import { GameStates } from "@prisma/client";
 
 class SocketService {
   private _io: Server;
@@ -186,10 +187,11 @@ class SocketService {
       // show result
       socket.on("display-result", async (gameCode, quesId, options) => {
         try {
-          const room = await this.prisma.gameSession.findUnique({
-            where: {
-              gameCode: gameCode,
-            },
+          const room = await this.prisma.gameSession.update({
+            where: {gameCode},
+            data:{
+              gameState: GameStates.answer
+            }
           });
 
           // return player counts for presenter
@@ -237,9 +239,10 @@ class SocketService {
 
       socket.on("final-leaderboard", async (gameCode) => {
         try {
-          const room = await this.prisma.gameSession.findUnique({
-            where: {
-              gameCode: gameCode,
+          const room = await this.prisma.gameSession.update({
+            where: { gameCode },
+            data: {
+              gameState: GameStates.leaderboard
             },
           });
           const leaderboard = await this.prisma.gameLeaderboard.findMany({
@@ -266,6 +269,11 @@ class SocketService {
       });
 
       socket.on("end-game-session", async (gameCode) => {
+        await this.prisma.gameSession.delete({
+          where: {
+            gameCode,
+          },
+        });
         io.to(gameCode).emit("game-session-ended");
       });
     });
