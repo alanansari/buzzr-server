@@ -43,6 +43,7 @@ model User {
   email         String?       @unique
   emailVerified DateTime?     @map("email_verified")
   image         String?
+  password      String?
   GameSessions  GameSession[]
   quizzes       Quiz[]
   accounts      Account[]
@@ -127,9 +128,9 @@ model GameSession {
 model GameLeaderboard {
   id            String      @id @default(cuid())
   playerId      String
-  gameSessionId String
+  gameSessionId String?
   score         Int         @default(0)
-  GameSession   GameSession @relation(fields: [gameSessionId], references: [id], onDelete: Cascade)
+  GameSession   GameSession? @relation(fields: [gameSessionId], references: [id], onDelete: SetNull)
   Player        Player      @relation(fields: [playerId], references: [id])
 
   @@unique([playerId, gameSessionId])
