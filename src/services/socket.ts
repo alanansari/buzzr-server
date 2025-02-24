@@ -188,10 +188,10 @@ class SocketService {
       socket.on("display-result", async (gameCode, quesId, options) => {
         try {
           const room = await this.prisma.gameSession.update({
-            where: {gameCode},
-            data:{
-              gameState: GameStates.answer
-            }
+            where: { gameCode },
+            data: {
+              gameState: GameStates.answer,
+            },
           });
 
           // return player counts for presenter
@@ -242,7 +242,7 @@ class SocketService {
           const room = await this.prisma.gameSession.update({
             where: { gameCode },
             data: {
-              gameState: GameStates.leaderboard
+              gameState: GameStates.leaderboard,
             },
           });
           const leaderboard = await this.prisma.gameLeaderboard.findMany({
@@ -269,11 +269,26 @@ class SocketService {
       });
 
       socket.on("end-game-session", async (gameCode) => {
-        await this.prisma.gameSession.delete({
-          where: {
-            gameCode,
-          },
-        });
+        try {
+          const gameSession = await this.prisma.gameSession.findUnique({
+            where: {
+              gameCode,
+            },
+          });
+
+          if (!gameSession) {
+            console.error("Game Session by id: ", gameCode, " not found!");
+            return;
+          }
+
+          await this.prisma.playerAnswer.deleteMany({
+            where: {
+              gameSessionId: gameSession.id,
+            },
+          });
+        } catch (error) {
+          console.error("Error deleting player answers:", error);
+        }
         io.to(gameCode).emit("game-session-ended");
       });
     });
